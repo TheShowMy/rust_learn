@@ -1,0 +1,1 @@
+cargo new --vcs none  projects/xx_name --name name_xx
