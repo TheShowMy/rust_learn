@@ -1,0 +1,14 @@
+{
+  "files.exclude": {
+    "projects/**/target": true,
+    "libs/**/target": true
+  },
+  "search.exclude": {
+    "projects/**/target": true,
+    "libs/**/target": true
+  },
+  "rust-analyzer.linkedProjects": [
+    "${workspaceFolder}/projects/01_Thread_Builder/Cargo.toml",
+    "${workspaceFolder}/projects/02_scoped_thread/Cargo.toml"
+  ],
+}
