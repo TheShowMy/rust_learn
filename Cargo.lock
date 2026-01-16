@@ -3,11 +3,31 @@
 version = 4
 
 [[package]]
+name = "cell_04"
+version = "0.1.0"
+
+[[package]]
 name = "common"
 version = "0.1.0"
 
 [[package]]
+name = "mutex_06"
+version = "0.1.0"
+
+[[package]]
+name = "ref_cell_05"
+version = "0.1.0"
+
+[[package]]
+name = "rw_lock_07"
+version = "0.1.0"
+
+[[package]]
 name = "scoped_thread_02"
+version = "0.1.0"
+
+[[package]]
+name = "share_data_03"
 version = "0.1.0"
 
 [[package]]
