@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, OnceCell};
 
 // Cell<T>
 // ·针对实现了Copy的类型
@@ -13,16 +13,29 @@ use std::cell::Cell;
 // ·可能情况下优先使用Cell<T>而不是其它的Cell类型
 // ·对于较大或者不可复制（non-copy）的类型，RefCell更有优势
 
+// OnceCell<T>
+// OnceCell<T>在某种程度上是Cell和RefCell的混合体，用于那些通
+// 常只需要设置一次的值
+// ·可以在不移动或复制内部值的情况下获得一个引用&T
+// ·同时也不需要运行时检查
+// ·一旦设置后，它的值就不能再被更新
+// ·除非你对OnceCell本身有一个可变引用
+// 方法：
+// get:获取内部值的引用
+// set：在值尚未设置时进行设置（返回一个Result）
+// get_or_init：返回内部值，如果需要则进行初始化
+// get_mut:提供内部值的可变引用，
+// ·但只有当你对OnceCell本身持有一个可变引用时才能使用
 fn main() {
     let cell = Cell::new(5);
     assert_eq!(cell.get(), 5); //字面量5是Copy类型 可以直接通过get方法copy出来 只有实现了Copy trait的类型才能使用get方法
 
-    assert_eq!(cell.replace(10),5); //replace方法 替换当前内部值为10 并返回原来的值5 replace方法适用于所有类型
+    assert_eq!(cell.replace(10), 5); //replace方法 替换当前内部值为10 并返回原来的值5 replace方法适用于所有类型
     assert_eq!(cell.get(), 10); //当前内部值被替换为10
 
     let ten = cell.into_inner(); //into_inner方法 消耗掉这个Cell<T> 并返回内部值
     //取消这个注释 将会报错 因为cell已经被消耗掉了
-    // cell.get(); 
+    // cell.get();
     assert_eq!(ten, 10); //ten的值为10
 
     let cell = Cell::new(String::from("hello"));
@@ -31,4 +44,11 @@ fn main() {
 
     cell.set(String::from("world")); //set方法 替换当前的内部值为"world" 丢弃原来的值
     assert_eq!(cell.take(), "world"); //再次使用take方法获取内部值
+
+    let cell = OnceCell::new();
+    assert!(cell.get().is_none()); //get方法 获取内部值的引用 目前还没有设置值 所以返回None
+    let v = cell.get_or_init(|| 0);
+    assert_eq!(*v, 0); //get_or_init方法 返回内部值 如果需要则进行初始化 这里初始化为0
+    // assert!(cell.set(42).is_ok()); //set方法 在值尚未设置时进行设置 这里设置为42 //取消这个注释 将会报错 因为值已经被get_or_init被初始化过了
+    assert!(cell.set(50).is_err()); //再次使用get方法 获取
 }
