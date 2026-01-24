@@ -15,3 +15,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 serde = { version = "1.0", features = ["derive"] }
 rust-embed = "8.11.0"
+mime_guess = "2.0"

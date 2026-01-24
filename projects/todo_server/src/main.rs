@@ -3,13 +3,14 @@ use std::sync::{Arc, RwLock, atomic::AtomicUsize};
 use axum::{
     Extension, Json, Router,
     extract::FromRequestParts,
-    http::{StatusCode, request::Parts},
-    response::{Html, IntoResponse},
+    http::{StatusCode, Uri, request::Parts},
+    response::IntoResponse,
     routing::{get, post},
 };
 use axum_extra::TypedHeader;
 use headers::{Authorization, authorization::Bearer};
 use jsonwebtoken as jwt;
+use rust_embed::Embed;
 use serde::{Deserialize, Serialize};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -100,6 +101,35 @@ impl IntoResponse for HttpError {
     }
 }
 
+#[derive(Embed)]
+#[folder = "my-app/dist/"]
+struct Assets;
+
+struct StaticFile<T>(pub T);
+
+impl<T> IntoResponse for StaticFile<T>
+where
+    T: AsRef<str>,
+{
+    fn into_response(self) -> axum::response::Response {
+        let path = self.0.as_ref();
+        // 建议去掉开头的 / 以匹配嵌入文件的路径
+        let path = path.trim_start_matches('/');
+        match Assets::get(path) {
+            Some(content) => {
+                let mime = mime_guess::from_path(path).first_or_octet_stream();
+                axum::response::Response::builder()
+                    .header(axum::http::header::CONTENT_TYPE, mime.as_ref())
+                    .body(axum::body::Body::from(content.data))
+                    .unwrap_or_else(|_| {
+                        (StatusCode::INTERNAL_SERVER_ERROR, "Internal Error").into_response()
+                    })
+            }
+            None => (StatusCode::NOT_FOUND, "File Not Found").into_response(),
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let store = TodoStore::default();
@@ -121,15 +151,20 @@ async fn main() {
                 .post(create_todos_handler)
                 .layer(Extension(store.clone())), // 为 /todos 路径添加状态共享
         )
-        .route("/login", post(login_handler));
+        .route("/login", post(login_handler))
+        .fallback(get(state_handler));
     tracing::info!("启动 Todo 服务器在 http://localhost:3000");
     // 注意: 这里我们绑定到 0.0.0.0，这样可以接受来自任何 IP 地址的连接
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     let _ = axum::serve(listener, app).await;
 }
 
-async fn index_handler() -> Html<&'static str> {
-    Html("<h1>Welcome to the Todo Server</h1>")
+async fn state_handler(url: Uri) -> impl IntoResponse {
+    StaticFile(url.path().to_string())
+}
+
+async fn index_handler() -> impl IntoResponse {
+    state_handler("/index.html".parse().unwrap()).await
 }
 
 async fn todos_handler(
@@ -144,7 +179,8 @@ async fn todos_handler(
                 .filter(|todo| todo.user_id == user_id)
                 .cloned()
                 .collect();
-            Ok(Json(todos))},
+            Ok(Json(todos))
+        }
         Err(_) => Err(HttpError::Internal),
     }
 }
