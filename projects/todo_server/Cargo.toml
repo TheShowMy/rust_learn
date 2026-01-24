@@ -5,7 +5,13 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8.8"
+# 开启 typed-header 特性
+axum-extra = { version = "0.12.5", features = ["typed-header"] }
+# 通常需要配合 headers 库使用
+headers = "0.4"
+jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
 tokio = { version = "1.49.0", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 serde = { version = "1.0", features = ["derive"] }
+rust-embed = "8.11.0"
